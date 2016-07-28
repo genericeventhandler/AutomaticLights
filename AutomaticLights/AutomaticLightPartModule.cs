@@ -17,7 +17,7 @@
         public string resourceName;
 
         private const string ElectricCharge = "ElectricCharge";
-        private static int counter = 0;
+        private static int counter = 1;
 
         public override void OnUpdate()
         {
@@ -85,7 +85,9 @@
                         var ml = m as ModuleLight;
                         if (ml != null)
                         {
+                            ml.isOn = turnOn;
                             ml.SetLightState(turnOn);
+                            ml.UpdateLightColors();
                             break; // this part shouldn't have more than one module light.
                         }
                     }
