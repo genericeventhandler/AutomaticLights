@@ -6,6 +6,8 @@
     {
         private static string lastMessage;
 
+        private static bool isActive;
+
         [KSPField()]
         public bool checkResource;
 
@@ -28,12 +30,24 @@
         [KSPField()]
         public string resourceName;
 
+        [KSPEvent(guiActive = true, guiName = "Toggle mode", active = true)]
+        public void ToggleMode()
+        {
+            isActive = !isActive;
+            ScreenMessages.PostScreenMessage("Automatic lights are " + (isActive ? " on": "off"));
+        }
+
         private const string ElectricCharge = "ElectricCharge";
         private static int counter = 1;
 
         public override void OnFixedUpdate()
         {
             base.OnUpdate();
+            if (!isActive)
+            {
+                return;
+            }
+
             if (counter++ % 100 != 0)
             {
                 // only update every 100 frames.
@@ -73,7 +87,7 @@
                         break;
                     }
                 }
-
+                
                 if (rex == null)
                 {
                     UnityEngine.Debug.Log("Missing resource " + resourceName.ValueOrDefault(ElectricCharge));
