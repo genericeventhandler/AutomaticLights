@@ -4,8 +4,20 @@
 
     public class AutomaticLightPartModule : PartModule
     {
+        private static string lastMessage;
+
         [KSPField()]
         public bool checkResource;
+
+        public override string GetInfo()
+        {
+            if(string.IsNullOrEmpty(lastMessage))
+            {
+                return "Startup";
+            }
+
+            return lastMessage;
+        }
 
         /// <summary>
         /// This value should be a percentage 0.0 -&gt; 1.0
@@ -17,9 +29,9 @@
         public string resourceName;
 
         private const string ElectricCharge = "ElectricCharge";
-        private static int counter = 0;
+        private static int counter = 1;
 
-        public override void OnUpdate()
+        public override void OnFixedUpdate()
         {
             base.OnUpdate();
             if (counter++ % 100 != 0)
@@ -30,15 +42,22 @@
 
             counter = 1;
 
-            var vessel = FlightGlobals.ActiveVessel;
-            if (vessel.state != Vessel.State.ACTIVE)
+            if(FlightGlobals.ActiveVessel == null)
             {
                 return;
             }
 
-            if (vessel.situation != Vessel.Situations.PRELAUNCH)
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel.state != Vessel.State.ACTIVE)
             {
-                // don't drain power on the pad.
+                lastMessage = "Vessel not active!";
+                return;
+            }
+
+            if (vessel.situation != Vessel.Situations.ORBITING && vessel.situation != Vessel.Situations.LANDED)
+            {
+                // Only do updates when we are orbiting, or landed
+                lastMessage = "Vessel not orbiting or landed.";
                 return;
             }
 
@@ -64,10 +83,12 @@
                 // Check that we have the required resource.
                 if (rex.amount > 0 && rex.amount / rex.maxAmount > minResourceLevel)
                 {
+                    lastMessage = "Turn off auto";
                     TurnOnOffAuto();
                 }
                 else
                 {
+                    lastMessage = "Resources low";
                     TurnOnOff(false);
                 }
             }
@@ -85,7 +106,16 @@
                         var ml = m as ModuleLight;
                         if (ml != null)
                         {
-                            ml.SetLightState(turnOn);
+                            if (ml.isOn != turnOn)
+                            {
+                                lastMessage = "turning lights " + (turnOn ? "on" : "off");
+                                ml.SetLightState(turnOn);
+                                ml.isOn = turnOn;
+                                ml.UpdateLightColors();
+                                //p.SendEvent(turnOn ? Constants.LightOnEvent : Constants.LightOffEvent);
+                                break;
+                            }
+
                             break; // this part shouldn't have more than one module light.
                         }
                     }
