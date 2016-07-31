@@ -30,27 +30,38 @@
         [KSPField()]
         public string resourceName;
 
+        [KSPField()]
+        public int framesToSkip;
+
         [KSPEvent(guiActive = true, guiName = "Toggle mode", active = true)]
         public void ToggleMode()
         {
             isActive = !isActive;
-            ScreenMessages.PostScreenMessage("Automatic lights are " + (isActive ? " on": "off"));
+            lightsOn = isActive;
+            SendMessageToScreen("Automatic lights are " + (isActive ? " on": "off"));
         }
+
+        private bool lightsOn; 
 
         private const string ElectricCharge = "ElectricCharge";
         private static int counter = 1;
 
         public override void OnFixedUpdate()
         {
+            if(framesToSkip <= 0)
+            {
+                framesToSkip = 40;
+            }
+
             base.OnUpdate();
             if (!isActive)
             {
                 return;
             }
 
-            if (counter++ % 100 != 0)
+            if (counter++ % framesToSkip != 0)
             {
-                // only update every 100 frames.
+                // only update every x frames.
                 return;
             }
 
@@ -68,9 +79,9 @@
                 return;
             }
 
-            if (vessel.situation != Vessel.Situations.ORBITING && vessel.situation != Vessel.Situations.LANDED)
+            if (vessel.situation == Vessel.Situations.PRELAUNCH || vessel.situation == Vessel.Situations.SPLASHED)
             {
-                // Only do updates when we are orbiting, or landed
+                // Don't turn on the lights if we are prelaunch or splashed.
                 lastMessage = "Vessel not orbiting or landed.";
                 return;
             }
@@ -102,8 +113,11 @@
                 }
                 else
                 {
-                    lastMessage = "Resources low";
-                    TurnOnOff(false);
+                    if (lightsOn)
+                    {
+                        SendMessageToScreen("Resources low");
+                        TurnOnOff(false);
+                    }
                 }
             }
         }
@@ -126,6 +140,8 @@
                                 ml.SetLightState(turnOn);
                                 ml.isOn = turnOn;
                                 ml.UpdateLightColors();
+                                lightsOn = turnOn;
+
                                 //p.SendEvent(turnOn ? Constants.LightOnEvent : Constants.LightOffEvent);
                                 break;
                             }
@@ -156,6 +172,11 @@
                     }
                 }
             }
+        }
+
+        private void SendMessageToScreen(string message)
+        {
+            ScreenMessages.PostScreenMessage(message);
         }
     }
 }
