@@ -33,6 +33,9 @@
         [KSPField()]
         public int framesToSkip;
 
+        [KSPField()]
+        public bool debugIsOn;
+
         [KSPEvent(guiActive = true, guiName = "Toggle mode", active = true)]
         public void ToggleMode()
         {
@@ -52,8 +55,7 @@
             {
                 framesToSkip = 40;
             }
-
-            base.OnUpdate();
+            
             if (!isActive)
             {
                 return;
@@ -62,6 +64,7 @@
             if (counter++ % framesToSkip != 0)
             {
                 // only update every x frames.
+                base.OnUpdate();
                 return;
             }
 
@@ -69,6 +72,7 @@
 
             if(FlightGlobals.ActiveVessel == null)
             {
+                Debug("no active vessel");
                 return;
             }
 
@@ -76,15 +80,17 @@
             if (vessel.state != Vessel.State.ACTIVE)
             {
                 lastMessage = "Vessel not active!";
+                Debug();
                 return;
             }
 
-            if (vessel.situation == Vessel.Situations.PRELAUNCH || vessel.situation == Vessel.Situations.SPLASHED)
-            {
-                // Don't turn on the lights if we are prelaunch or splashed.
-                lastMessage = "Vessel not orbiting or landed.";
-                return;
-            }
+            //if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            //{
+            //    // Don't turn on the lights if we are prelaunch or splashed.
+            //    lastMessage = "Vessel is in prelaunch.";
+            //    Debug();
+            //    return;
+            //}
 
             if (checkResource)
             {
@@ -95,12 +101,14 @@
                     if (r.info.name == resourceName.ValueOrDefault(ElectricCharge))
                     {
                         rex = r;
+                        Debug("found electric charge");
                         break;
                     }
                 }
                 
                 if (rex == null)
                 {
+                    Debug("missing resource");
                     UnityEngine.Debug.Log("Missing resource " + resourceName.ValueOrDefault(ElectricCharge));
                     return;
                 }
@@ -109,6 +117,7 @@
                 if (rex.amount > 0 && rex.amount / rex.maxAmount > minResourceLevel)
                 {
                     lastMessage = "Turn off auto";
+                    Debug();
                     TurnOnOffAuto();
                 }
                 else
@@ -117,6 +126,10 @@
                     {
                         SendMessageToScreen("Resources low");
                         TurnOnOff(false);
+                    }
+                    else
+                    {
+                        Debug("lightsOn = false and resource is low");
                     }
                 }
             }
@@ -137,6 +150,7 @@
                             if (ml.isOn != turnOn)
                             {
                                 lastMessage = "turning lights " + (turnOn ? "on" : "off");
+                                Debug();
                                 ml.SetLightState(turnOn);
                                 ml.isOn = turnOn;
                                 ml.UpdateLightColors();
@@ -151,6 +165,8 @@
                     }
                 }
             }
+
+            Debug("exit turn on / off");
         }
 
         private void TurnOnOffAuto()
@@ -164,10 +180,12 @@
                     // if the sun is null, we've got bigger problems
                     if (Utilities.RaytraceBody(vessel, sun))
                     {
+                        Debug("raytrace returned true - turning off lights");
                         TurnOnOff(false);
                     }
                     else
                     {
+                        Debug("raytrace returned false - turning on lights");
                         TurnOnOff(true);
                     }
                 }
@@ -177,6 +195,19 @@
         private void SendMessageToScreen(string message)
         {
             ScreenMessages.PostScreenMessage(message);
+        }
+
+        private void Debug()
+        {
+            Debug(lastMessage);
+        }
+
+        private void Debug(string message)
+        {
+            if(debugIsOn)
+            {
+                SendMessageToScreen(message);
+            }
         }
     }
 }
