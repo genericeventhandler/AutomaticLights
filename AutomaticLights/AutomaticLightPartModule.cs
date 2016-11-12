@@ -49,22 +49,10 @@
         private const string ElectricCharge = "ElectricCharge";
         private static int counter = 1;
 
-        public override void OnFixedUpdate()
+        public override void OnUpdate()
         {
-            if(framesToSkip <= 0)
-            {
-                framesToSkip = 40;
-            }
-            
             if (!isActive)
             {
-                return;
-            }
-
-            if (counter++ % framesToSkip != 0)
-            {
-                // only update every x frames.
-                base.OnUpdate();
                 return;
             }
 
