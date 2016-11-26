@@ -60,7 +60,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="GameData\GenericEventHandler\Electrical\autoGenerator.cfg" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="GameData\GenericEventHandler\Electrical\AutoLight.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -69,7 +71,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"e:\Games\Tools\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"
+    <PostBuildEvent>rem "e:\Games\Tools\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"
 xcopy /Y "$(TargetPath)" "d:\Games\Kerbal\GameData\GenericEventHandler\Plugins\"
 xcopy /Y "$(TargetDir)$(TargetName).pdb" "d:\Games\Kerbal\GameData\GenericEventHandler\Plugins\"
 xcopy /Y "$(TargetDir)$(TargetName).dll.mdb" "e:\Games\Kerbal\GameData\GenericEventHandler\Plugins\"

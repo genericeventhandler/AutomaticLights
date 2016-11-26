@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AutomaticLights
 {
-    public class ModuleAutoGenerator : PartModule
+    public class AutoGeneratorModule : PartModule
     {
         [KSPField()]
         public double low;
@@ -19,20 +19,60 @@ namespace AutomaticLights
         [KSPField]
         public string power;
 
+        private static bool isDebug;
+
+        [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
+        public void ToggleMode()
+        {
+            isDebug = !isDebug;
+            SendMessageToScreen("Debug mode is " + (isDebug ? " on" : "off"));
+        }
+
+
+        public static int counter = 1;
+
+        public override string GetInfo()
+        {
+            return "GEH auto fuel cell, and RTG";
+        }
+
+        public override void OnFixedUpdate()
+        {
+            DoAction();
+        }
+
         public override void OnUpdate()
         {
-            base.OnUpdate();
+            DoAction();
+        }
 
-            var currentPower = GetRosource(power);
+        public void DoAction()
+        {
+            if (FlightGlobals.ActiveVessel == null)
+            {
+                return;
+            }
+
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null || vessel.state != Vessel.State.ACTIVE)
+            {
+                return;
+            }
+
+            var currentPower = GetResource(power);
             var resourceToWatch = GetResource(watch);
 
-            if(currentPower < low || resourceToWatch >= 99)
+            //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
+
+            if(currentPower < low || resourceToWatch >= 0.99)
             {
+                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", currentPower, low, watch, resourceToWatch);
                 ToggleGenerator(false);
             }
 
-            if(currentPower > high && resourceToWatch < 100)
+            if(currentPower > high && resourceToWatch < 0.99)
             {
+                Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99", currentPower, high, watch, resourceToWatch);
                 ToggleGenerator(true);
             }
         }
@@ -40,46 +80,86 @@ namespace AutomaticLights
         private void ToggleGenerator(bool onOff)
         {
             var parent = this.part;
-            foreach(var m in parent.Modules)
+            if (parent != null)
             {
-                ModuleGenerator mg = m as ModuleGenerator;
-                if(mg != null)
+                //Debug("found a part, looking for modules");
+                foreach (var m in parent.Modules)
                 {
-                    if(mg.generatorIsActive != onOff)
+                    ModuleGenerator mg = m as ModuleGenerator;
+                    if (mg != null)
                     {
-                        if(onOff)
+                        //Debug("Found a module");
+                        if (mg.isAlwaysActive)
                         {
-                            mg.Activate();
+                            //Debug("Always active, quiting");
                         }
                         else
                         {
-                            mg.Shutdown();
+                            if (onOff)
+                            {
+                                //Debug("Turning on generator");
+                                mg.Activate();
+                            }
+                            else
+                            {
+                                //Debug("Turning off generator");
+                                mg.Shutdown();
+                            }
                         }
                     }
                 }
             }
-
-            throw new NotImplementedException();
         }
 
         private double GetResource(string res)
         {
             var vessel = FlightGlobals.ActiveVessel;
-            if(vessel.state != Vessel.State.ACTIVE)
+            if(vessel == null || vessel.state != Vessel.State.ACTIVE)
             {
-                return 0;
+                //Debug("Vessel state not active");
+                return 1;
             }
 
             var activeResources = vessel.GetActiveResources();
             foreach(var r in activeResources)
             {
-                if (r.info.name == res.ValueOrDefault("ElectricCharge"))
+                if (r.info.name.ToLower() == res.ToLower())
                 {
-                    return r.amount;
+                    //Debug("{0} v = {1} max = 2", r.amount, r.maxAmount);
+                    if (r.maxAmount > 0)
+                    {
+                        return r.amount / r.maxAmount;
+                    }
                 }
             }
 
-            return 0;
+
+            //Debug("Didn't find the resource {0} ", res);
+            return 1;
+        }
+
+        private void SendMessageToScreen(string message)
+        {
+            ScreenMessages.PostScreenMessage(message);
+        }
+
+        private void Debug(string message, params object[] args)
+        {
+            Debug(string.Format(message, args));
+        }
+
+        private static string lastMessage;
+
+        private void Debug(string message)
+        {
+            if (isDebug)
+            {
+                if(message != lastMessage)
+                {
+                    SendMessageToScreen(message);
+                    lastMessage = message;
+                }
+            }
         }
     }
 }

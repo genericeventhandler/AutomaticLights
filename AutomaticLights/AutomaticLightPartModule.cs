@@ -49,7 +49,17 @@
         private const string ElectricCharge = "ElectricCharge";
         private static int counter = 1;
 
+        public override void OnFixedUpdate()
+        {
+            DoAction();
+        }
+
         public override void OnUpdate()
+        {
+            DoAction();
+        }
+
+        public void DoAction()
         {
             if (!isActive)
             {
@@ -112,8 +122,13 @@
                 {
                     if (lightsOn)
                     {
-                        SendMessageToScreen("Resources low");
-                        TurnOnOff(false);
+                        counter = counter - 1;
+                        if(counter < 0)
+                        {
+                            SendMessageToScreen("Resources low");
+                            TurnOnOff(false);
+                            counter = framesToSkip;
+                        }
                     }
                     else
                     {
