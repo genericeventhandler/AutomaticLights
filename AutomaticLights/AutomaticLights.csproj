@@ -57,11 +57,13 @@
     <Compile Include="AutomaticLightPartModule.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="ModuleAutoGenerator.cs" />
+    <Compile Include="ModuleAutoResourceHarvester.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GameData\GenericEventHandler\Electrical\autoGenerator.cfg" />
+    <None Include="GameData\GenericEventHandler\Electrical\autoMiner.cfg" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="GameData\GenericEventHandler\Electrical\AutoLight.cfg">

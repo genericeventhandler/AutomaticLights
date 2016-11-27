@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿
 
 namespace AutomaticLights
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
     public class AutoGeneratorModule : PartModule
     {
         [KSPField()]
@@ -59,20 +61,20 @@ namespace AutomaticLights
                 return;
             }
 
-            var currentPower = GetResource(power);
-            var resourceToWatch = GetResource(watch);
+            var currentPower = Utilities.GetResource(power);
+            var resourceToWatch = Utilities.GetResource(watch);
 
             //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
 
             if(currentPower < low || resourceToWatch >= 0.99)
             {
-                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", currentPower, low, watch, resourceToWatch);
+                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower,1), low, watch, Math.Round(resourceToWatch,1));
                 ToggleGenerator(false);
             }
 
             if(currentPower > high && resourceToWatch < 0.99)
             {
-                Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99", currentPower, high, watch, resourceToWatch);
+                Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99",Math.Round(currentPower,1), high, watch, Math.Round(resourceToWatch,1));
                 ToggleGenerator(true);
             }
         }
@@ -111,32 +113,7 @@ namespace AutomaticLights
             }
         }
 
-        private double GetResource(string res)
-        {
-            var vessel = FlightGlobals.ActiveVessel;
-            if(vessel == null || vessel.state != Vessel.State.ACTIVE)
-            {
-                //Debug("Vessel state not active");
-                return 1;
-            }
-
-            var activeResources = vessel.GetActiveResources();
-            foreach(var r in activeResources)
-            {
-                if (r.info.name.ToLower() == res.ToLower())
-                {
-                    //Debug("{0} v = {1} max = 2", r.amount, r.maxAmount);
-                    if (r.maxAmount > 0)
-                    {
-                        return r.amount / r.maxAmount;
-                    }
-                }
-            }
-
-
-            //Debug("Didn't find the resource {0} ", res);
-            return 1;
-        }
+       
 
         private void SendMessageToScreen(string message)
         {

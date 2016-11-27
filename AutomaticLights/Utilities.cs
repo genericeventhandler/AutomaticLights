@@ -98,5 +98,32 @@ namespace AutomaticLights
 
             return value;
         }
+
+        public static double GetResource(string res)
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null || vessel.state != Vessel.State.ACTIVE)
+            {
+                //Debug("Vessel state not active");
+                return 1;
+            }
+
+            var activeResources = vessel.GetActiveResources();
+            foreach (var r in activeResources)
+            {
+                if (r.info.name.ToLower() == res.ToLower())
+                {
+                    //Debug("{0} v = {1} max = 2", r.amount, r.maxAmount);
+                    if (r.maxAmount > 0)
+                    {
+                        return r.amount / r.maxAmount;
+                    }
+                }
+            }
+
+
+            //Debug("Didn't find the resource {0} ", res);
+            return 1;
+        }
     }
 }
