@@ -18,6 +18,7 @@
 
         private static bool isDebug;
         private static bool isActive;
+        private static bool isRunning;
 
         [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
         public void ToggleMode()
@@ -40,7 +41,7 @@
             return "Automatic Mining Adaptor";
         }
 
-        public override void OnFixedUpdate()
+        public void Update()
         {
             DoAction();
         }
@@ -70,16 +71,25 @@
 
                 //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
 
-                if (currentPower < low || resourceToWatch >= 0.99)
-                {
-                    Debug("Turn off miner, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower,1), low, watch, Math.Round(resourceToWatch,1));
-                    ToggleGenerator(false);
-                }
+                bool landed = vessel.situation == Vessel.Situations.LANDED;
 
-                if (currentPower > high && resourceToWatch < 0.99)
+                if (isRunning)
                 {
-                    Debug("Turn on miner EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower,1), high, watch, Math.Round(resourceToWatch,1));
-                    ToggleGenerator(true);
+                    if (currentPower < low || resourceToWatch >= 0.99 || !landed)
+                    {
+                        Debug("Turn off miner, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
+                        ToggleGenerator(false);
+                        isRunning = false;
+                    }
+                }
+                else
+                {
+                    if (currentPower > high && resourceToWatch < 0.99 && landed)
+                    {
+                        Debug("Turn on miner EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower, 1), high, watch, Math.Round(resourceToWatch, 1));
+                        ToggleGenerator(true);
+                        isRunning = true;
+                    }
                 }
             }
         }
@@ -135,4 +145,3 @@
         }
     }
 }
-

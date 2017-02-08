@@ -108,22 +108,45 @@ namespace AutomaticLights
                 return 1;
             }
 
-            var activeResources = vessel.GetActiveResources();
-            foreach (var r in activeResources)
+            var rx = GetActiveResource(res);
+            return rx.amount / rx.maxAmount;
+        }
+
+        public static ResourceX GetActiveResource(string name)
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            double min;
+            double max;
+
+            var id = PartResourceLibrary.Instance.GetDefinition(name).id;
+            vessel.resourcePartSet.GetConnectedResourceTotals(id, out min, out max, false);
+            var rx = new ResourceX();
+            if (max <= 0)
             {
-                if (r.info.name.ToLower() == res.ToLower())
-                {
-                    //Debug("{0} v = {1} max = 2", r.amount, r.maxAmount);
-                    if (r.maxAmount > 0)
-                    {
-                        return r.amount / r.maxAmount;
-                    }
-                }
+                max = 1;
             }
 
+            rx.amount = min;
+            rx.maxAmount = max;
+            rx.Name = name;
+            return rx;
+        }
+    }
 
-            //Debug("Didn't find the resource {0} ", res);
-            return 1;
+    public class ResourceX
+    {
+        public string Name { get; set; }
+
+        public double amount { get; set; }
+
+        public double maxAmount { get; set; }
+
+        public double PercentRemaining
+        {
+            get
+            {
+                return amount / maxAmount;
+            }
         }
     }
 }

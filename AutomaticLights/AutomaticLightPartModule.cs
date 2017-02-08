@@ -13,7 +13,7 @@
 
         public override string GetInfo()
         {
-            if(string.IsNullOrEmpty(lastMessage))
+            if (string.IsNullOrEmpty(lastMessage))
             {
                 return "Startup";
             }
@@ -41,15 +41,15 @@
         {
             isActive = !isActive;
             lightsOn = isActive;
-            SendMessageToScreen("Automatic lights are " + (isActive ? " on": "off"));
+            SendMessageToScreen("Automatic lights are " + (isActive ? " on" : "off"));
         }
 
-        private bool lightsOn; 
+        private bool lightsOn;
 
         private const string ElectricCharge = "ElectricCharge";
         private static int counter = 1;
 
-        public override void OnFixedUpdate()
+        public void Update()
         {
             DoAction();
         }
@@ -68,7 +68,7 @@
 
             counter = 1;
 
-            if(FlightGlobals.ActiveVessel == null)
+            if (FlightGlobals.ActiveVessel == null)
             {
                 Debug("no active vessel");
                 return;
@@ -92,27 +92,10 @@
 
             if (checkResource)
             {
-                var activeResources = vessel.GetActiveResources();
-                Vessel.ActiveResource rex = null;
-                foreach (var r in activeResources)
-                {
-                    if (r.info.name == resourceName.ValueOrDefault(ElectricCharge))
-                    {
-                        rex = r;
-                        Debug("found electric charge");
-                        break;
-                    }
-                }
-                
-                if (rex == null)
-                {
-                    Debug("missing resource");
-                    UnityEngine.Debug.Log("Missing resource " + resourceName.ValueOrDefault(ElectricCharge));
-                    return;
-                }
+                var rex = Utilities.GetResource("ElectricCharge");
 
                 // Check that we have the required resource.
-                if (rex.amount > 0 && rex.amount / rex.maxAmount > minResourceLevel)
+                if (rex > 0 && rex > minResourceLevel)
                 {
                     lastMessage = "Turn off auto";
                     Debug();
@@ -123,7 +106,7 @@
                     if (lightsOn)
                     {
                         counter = counter - 1;
-                        if(counter < 0)
+                        if (counter < 0)
                         {
                             SendMessageToScreen("Resources low");
                             TurnOnOff(false);
@@ -207,7 +190,7 @@
 
         private void Debug(string message)
         {
-            if(debugIsOn)
+            if (debugIsOn)
             {
                 SendMessageToScreen(message);
             }

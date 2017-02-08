@@ -1,6 +1,4 @@
-﻿
-
-namespace AutomaticLights
+﻿namespace AutomaticLights
 {
     using System;
     using System.Collections.Generic;
@@ -14,7 +12,7 @@ namespace AutomaticLights
 
         [KSPField]
         public double high;
-        
+
         [KSPField]
         public string watch;
 
@@ -22,6 +20,7 @@ namespace AutomaticLights
         public string power;
 
         private static bool isDebug;
+        private static bool isRunning;
 
         [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
         public void ToggleMode()
@@ -30,7 +29,6 @@ namespace AutomaticLights
             SendMessageToScreen("Debug mode is " + (isDebug ? " on" : "off"));
         }
 
-
         public static int counter = 1;
 
         public override string GetInfo()
@@ -38,7 +36,7 @@ namespace AutomaticLights
             return "GEH auto fuel cell, and RTG";
         }
 
-        public override void OnFixedUpdate()
+        public void Update()
         {
             DoAction();
         }
@@ -66,16 +64,23 @@ namespace AutomaticLights
 
             //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
 
-            if(currentPower < low || resourceToWatch >= 0.99)
+            if (isRunning)
             {
-                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower,1), low, watch, Math.Round(resourceToWatch,1));
-                ToggleGenerator(false);
+                if (currentPower < low || resourceToWatch >= 0.99)
+                {
+                    Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
+                    ToggleGenerator(false);
+                    isRunning = false;
+                }
             }
-
-            if(currentPower > high && resourceToWatch < 0.99)
+            else
             {
-                Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99",Math.Round(currentPower,1), high, watch, Math.Round(resourceToWatch,1));
-                ToggleGenerator(true);
+                if (currentPower > high && resourceToWatch < 0.99 && !isRunning)
+                {
+                    Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower, 1), high, watch, Math.Round(resourceToWatch, 1));
+                    ToggleGenerator(true);
+                    isRunning = true;
+                }
             }
         }
 
@@ -113,8 +118,6 @@ namespace AutomaticLights
             }
         }
 
-       
-
         private void SendMessageToScreen(string message)
         {
             ScreenMessages.PostScreenMessage(message);
@@ -131,7 +134,7 @@ namespace AutomaticLights
         {
             if (isDebug)
             {
-                if(message != lastMessage)
+                if (message != lastMessage)
                 {
                     SendMessageToScreen(message);
                     lastMessage = message;
