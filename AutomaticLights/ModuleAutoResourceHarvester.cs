@@ -18,7 +18,7 @@
 
         private static bool isDebug;
         private static bool isActive;
-        private static bool isRunning;
+        private bool isRunning;
 
         [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
         public void ToggleMode()
@@ -32,6 +32,13 @@
         {
             isActive = !isActive;
             SendMessageToScreen("Auto mining is " + (isActive ? " on" : "off"));
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Debug Values", active = true)]
+        public void DebugValues()
+        {
+            isDebug = true;
+            Debug(string.Format(" E:{0} W:{1} L:{2} H:{3} Sit:{4}"), Utilities.GetResource("ElectricCharge"), Utilities.GetResource(watch), low, high, FlightGlobals.ActiveVessel);
         }
 
         public static int counter = 1;
@@ -73,18 +80,15 @@
 
                 bool landed = vessel.situation == Vessel.Situations.LANDED;
 
-                if (isRunning)
+                if (isRunning && (currentPower < low || resourceToWatch >= 0.99 || !landed))
                 {
-                    if (currentPower < low || resourceToWatch >= 0.99 || !landed)
-                    {
-                        Debug("Turn off miner, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
-                        ToggleGenerator(false);
-                        isRunning = false;
-                    }
+                    Debug("Turn off miner, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
+                    ToggleGenerator(false);
+                    isRunning = false;
                 }
                 else
                 {
-                    if (currentPower > high && resourceToWatch < 0.99 && landed)
+                    if (!isRunning && (currentPower > high && resourceToWatch < 0.99 && landed))
                     {
                         Debug("Turn on miner EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower, 1), high, watch, Math.Round(resourceToWatch, 1));
                         ToggleGenerator(true);
@@ -131,12 +135,11 @@
                     {
                         if (onOff)
                         {
-                            //Debug("Turning on generator");
                             mg.StartResourceConverter();
                         }
                         else
                         {
-                            //Debug("Turning off generator");
+                            //Debug("Turning off Mining");
                             mg.StopResourceConverter();
                         }
                     }

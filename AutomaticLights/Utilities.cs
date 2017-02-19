@@ -24,7 +24,7 @@ namespace AutomaticLights
         /// name="vessel">vessel: origin</param> <param name="body">body: target</param>
         /// <returns>return: true if visible, false otherwise</returns> <remarks> Author :
         /// ShotgunNinja - http://forum.kerbalspaceprogram.com/index.php?/topic/144484-auto-lights-at-night/&do=findComment&comment=2691985</remarks>
-        [Obsolete("Warning, only works for the sun, use the other method instead", false)]
+        [Obsolete("Warning, only works for the sun, use the other method instead", true)]
         public static bool RaytraceBody(Vessel vessel, CelestialBody body)
         {
             // shortcuts
@@ -119,7 +119,7 @@ namespace AutomaticLights
             double max;
 
             var id = PartResourceLibrary.Instance.GetDefinition(name).id;
-            vessel.resourcePartSet.GetConnectedResourceTotals(id, out min, out max, false);
+            vessel.resourcePartSet.GetConnectedResourceTotals(id, out min, out max, true);
             var rx = new ResourceX();
             if (max <= 0)
             {

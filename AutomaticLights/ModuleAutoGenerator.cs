@@ -20,13 +20,21 @@
         public string power;
 
         private static bool isDebug;
-        private static bool isRunning;
+        private bool isRunning;
 
         [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
         public void ToggleMode()
         {
             isDebug = !isDebug;
             SendMessageToScreen("Debug mode is " + (isDebug ? " on" : "off"));
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Debug Values", active = true)]
+        public void DisplayDebugInfo()
+        {
+            string msg = string.Format("Debug: R:{0} L:{1} H:{2} E:{3} LQ:{4}", watch, low, high, Utilities.GetResource(power), Utilities.GetResource(watch));
+            isDebug = true;
+            Debug(msg);
         }
 
         public static int counter = 1;

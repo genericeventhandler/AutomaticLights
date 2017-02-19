@@ -42,6 +42,21 @@
             isActive = !isActive;
             lightsOn = isActive;
             SendMessageToScreen("Automatic lights are " + (isActive ? " on" : "off"));
+            isOn = true;
+            TurnOnOffAuto();
+            if (isOn)
+            {
+                isOn = false;
+                TurnOnOffAuto();
+            }
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Debug Values", active = true)]
+        public void DisplayDebugInfo()
+        {
+            string msg = string.Format("Debug: E{0} ", Utilities.GetResource(ElectricCharge));
+            debugIsOn = true;
+            Debug(msg);
         }
 
         private bool lightsOn;
@@ -90,97 +105,90 @@
             //    return;
             //}
 
-            if (checkResource)
-            {
-                var rex = Utilities.GetResource("ElectricCharge");
+            var rex = Utilities.GetResource("ElectricCharge");
 
-                // Check that we have the required resource.
-                if (rex > 0 && rex > minResourceLevel)
-                {
-                    lastMessage = "Turn off auto";
-                    Debug();
-                    TurnOnOffAuto();
-                }
-                else
-                {
-                    if (lightsOn)
-                    {
-                        counter = counter - 1;
-                        if (counter < 0)
-                        {
-                            SendMessageToScreen("Resources low");
-                            TurnOnOff(false);
-                            counter = framesToSkip;
-                        }
-                    }
-                    else
-                    {
-                        Debug("lightsOn = false and resource is low");
-                    }
-                }
+            // Check that we have the required resource.
+            if (rex > 0 && rex > minResourceLevel)
+            {
+                TurnOnOffAuto();
+            }
+            else
+            {
+                TurnOnOff(false);
+                counter = framesToSkip;
             }
         }
 
         private void TurnOnOff(bool turnOn)
         {
-            var vessel = FlightGlobals.ActiveVessel;
-            if (vessel != null)
+            var p = this.part;
+            foreach (var m in p.Modules)
             {
-                foreach (var p in vessel.GetActiveParts())
+                var ml = m as ModuleLight;
+                if (ml != null)
                 {
-                    foreach (var m in p.Modules)
+                    //Debug("turning lights " + (turnOn ? "on" : "off"));
+
+                    if (turnOn)
                     {
-                        var ml = m as ModuleLight;
-                        if (ml != null)
+                        if (!ml.isOn)
                         {
-                            if (ml.isOn != turnOn)
-                            {
-                                lastMessage = "turning lights " + (turnOn ? "on" : "off");
-                                Debug();
-                                ml.SetLightState(turnOn);
-                                ml.isOn = turnOn;
-                                ml.UpdateLightColors();
-                                lightsOn = turnOn;
-
-                                //p.SendEvent(turnOn ? Constants.LightOnEvent : Constants.LightOffEvent);
-                                break;
-                            }
-
-                            break; // this part shouldn't have more than one module light.
+                            ml.LightsOn();
+                        }
+                    }
+                    else
+                    {
+                        if (ml.isOn)
+                        {
+                            ml.LightsOff();
                         }
                     }
                 }
             }
-
-            Debug("exit turn on / off");
         }
+
+        private bool isOn = false;
 
         private void TurnOnOffAuto()
         {
+            Vector3d vector;
+            double dist;
             var vessel = FlightGlobals.ActiveVessel;
             if (vessel != null)
             {
-                var sun = FlightGlobals.Bodies.FirstOrDefault();
+                var sun = FlightGlobals.Bodies.FirstOrDefault(x => x.name == "Sun");
                 if (sun != null)
                 {
                     // if the sun is null, we've got bigger problems
-                    if (Utilities.RaytraceBody(vessel, sun))
+                    if (Utilities.RaytraceBody(vessel, sun, out vector, out dist))
                     {
-                        Debug("raytrace returned true - turning off lights");
+                        //Debug("raytrace returned true - turning off lights");
                         TurnOnOff(false);
                     }
                     else
                     {
-                        Debug("raytrace returned false - turning on lights");
+                        //Debug("raytrace returned false - turning on lights");
                         TurnOnOff(true);
                     }
                 }
+                else
+                {
+                    Debug("Sun not found!");
+                }
+            }
+            else
+            {
+                Debug("Vessel not found!");
             }
         }
 
         private void SendMessageToScreen(string message)
         {
-            ScreenMessages.PostScreenMessage(message);
+            if (lastMessage != message)
+            {
+                ScreenMessages.PostScreenMessage(message);
+                lastMessage = message;
+            }
         }
 
         private void Debug()
