@@ -62,7 +62,6 @@
         private bool lightsOn;
 
         private const string ElectricCharge = "ElectricCharge";
-        private static int counter = 1;
 
         public void Update()
         {
@@ -74,6 +73,8 @@
             DoAction();
         }
 
+        private System.DateTime elapsed;
+
         public void DoAction()
         {
             if (!isActive)
@@ -81,7 +82,15 @@
                 return;
             }
 
-            counter = 1;
+            if (elapsed.CompareTo(System.DateTime.Now) < 0)
+            {
+                // only check every three seconds.
+                elapsed = System.DateTime.Now.AddSeconds(3);
+            }
+            else
+            {
+                return;
+            }
 
             if (FlightGlobals.ActiveVessel == null)
             {
@@ -115,7 +124,6 @@
             else
             {
                 TurnOnOff(false);
-                counter = framesToSkip;
             }
         }
 

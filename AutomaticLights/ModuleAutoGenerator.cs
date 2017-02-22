@@ -20,7 +20,6 @@
         public string power;
 
         private static bool isDebug;
-        private bool isRunning;
 
         [KSPEvent(guiActive = true, guiName = "Toggle debug", active = true)]
         public void ToggleMode()
@@ -54,9 +53,20 @@
             DoAction();
         }
 
+        private DateTime elapsed;
+
         public void DoAction()
         {
             if (FlightGlobals.ActiveVessel == null)
+            {
+                return;
+            }
+
+            if (elapsed.CompareTo(DateTime.Now) < 0)
+            {
+                elapsed = DateTime.Now.AddSeconds(3);
+            }
+            else
             {
                 return;
             }
@@ -72,23 +82,18 @@
 
             //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
 
-            if (isRunning)
+            if (currentPower < low || resourceToWatch >= 0.99)
             {
-                if (currentPower < low || resourceToWatch >= 0.99)
-                {
-                    Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
-                    ToggleGenerator(false);
-                    isRunning = false;
-                }
+                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
+                ToggleGenerator(false);
+                return;
             }
-            else
+
+            if (currentPower >= high && resourceToWatch < 0.99)
             {
-                if (currentPower > high && resourceToWatch < 0.99 && !isRunning)
-                {
-                    Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower, 1), high, watch, Math.Round(resourceToWatch, 1));
-                    ToggleGenerator(true);
-                    isRunning = true;
-                }
+                Debug("Turn on generator EC {0} > {1} && {2} = {3} < 0.99", Math.Round(currentPower, 1), high, watch, Math.Round(resourceToWatch, 1));
+                ToggleGenerator(true);
+                return;
             }
         }
 
@@ -117,8 +122,11 @@
                             }
                             else
                             {
-                                //Debug("Turning off generator");
-                                mg.Shutdown();
+                                if (mg.isActiveAndEnabled)
+                                {
+                                    //Debug("Turning off generator");
+                                    mg.Shutdown();
+                                }
                             }
                         }
                     }
