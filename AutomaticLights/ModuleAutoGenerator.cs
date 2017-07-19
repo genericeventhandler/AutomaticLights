@@ -1,9 +1,6 @@
 ﻿namespace AutomaticLights
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
 
     public class AutoGeneratorModule : PartModule
     {
@@ -15,6 +12,9 @@
 
         [KSPField]
         public string watch;
+
+        [KSPField]
+        public double maxPercentFill;
 
         [KSPField]
         public string power;
@@ -45,18 +45,31 @@
 
         public void Update()
         {
-            DoAction();
+            try
+            {
+                DoAction();
+            }
+            catch { }
         }
 
         public override void OnUpdate()
         {
-            DoAction();
+            try
+            {
+                DoAction();
+            }
+            catch { }
         }
 
         private DateTime elapsed;
 
         public void DoAction()
         {
+            if (maxPercentFill <= 0 || maxPercentFill > 1)
+            {
+                maxPercentFill = 0.25;
+            }
+
             if (FlightGlobals.ActiveVessel == null)
             {
                 return;
@@ -82,9 +95,9 @@
 
             //Debug("EC = {0},  {1} = {2}", currentPower, watch, resourceToWatch);
 
-            if (currentPower < low || resourceToWatch >= 0.99)
+            if (currentPower < low || resourceToWatch >= maxPercentFill)
             {
-                Debug("Turn off generator, {0} < {1} || {2} = {3} >= 0.99", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1));
+                Debug("Turn off generator, {0} < {1} || {2} = {3} >= {4}", Math.Round(currentPower, 1), low, watch, Math.Round(resourceToWatch, 1), maxPercentFill);
                 ToggleGenerator(false);
                 return;
             }

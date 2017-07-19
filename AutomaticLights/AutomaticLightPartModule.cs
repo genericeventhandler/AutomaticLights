@@ -2,11 +2,176 @@
 {
     using System.Linq;
 
+    public class DeployableSafetyModule : PartModule
+    {
+        private static bool isActive = true;
+
+        private static string lastMessage;
+
+        private System.DateTime elapsed;
+
+        private bool isDeployed;
+
+        [KSPField()]
+        public double maxSurfaceSpeed;
+
+        public void Update()
+        {
+            DoAction();
+        }
+
+        public override void OnUpdate()
+        {
+            DoAction();
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Toggle auto deploy", active = true)]
+        public void ToggleMode()
+        {
+            DeployableSafetyModule.isActive = !isActive;
+            SendMessageToScreen("Auto deployables are " + (isActive ? " on" : "off"));
+        }
+
+        private void SendMessageToScreen(string message)
+        {
+            if (lastMessage != message)
+            {
+                ScreenMessages.PostScreenMessage(message);
+                lastMessage = message;
+            }
+        }
+
+        private void DoAction()
+        {
+            if (!isActive)
+            {
+                return;
+            }
+
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null)
+            {
+                return;
+            }
+
+            if (elapsed.CompareTo(System.DateTime.Now) < 0)
+            {
+                // only check every three seconds.
+                elapsed = System.DateTime.Now.AddSeconds(3);
+            }
+            else
+            {
+                return;
+            }
+
+            switch (vessel.situation)
+            {
+                case Vessel.Situations.LANDED:
+                case Vessel.Situations.SPLASHED:
+                    DoSplashed();
+                    return;
+
+                case Vessel.Situations.SUB_ORBITAL:
+                case Vessel.Situations.FLYING:
+                    DoFlying();
+                    return;
+
+                case Vessel.Situations.ESCAPING:
+                case Vessel.Situations.ORBITING:
+                case Vessel.Situations.PRELAUNCH:
+                default:
+                    return;
+            }
+        }
+
+        private void DoFlying()
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null)
+            {
+                return;
+            }
+
+            var planet = FlightGlobals.currentMainBody;
+            if (planet == null)
+            {
+                return;
+            }
+
+            if (planet.atmosphere && vessel.dynamicPressurekPa > 1)
+            {
+                DoSplashed();
+                return;
+            }
+            else
+            {
+                if (vessel.terrainAltitude < 1000)
+                {
+                    FoldPanels(vessel, false);
+                }
+            }
+
+            DoSplashed();
+        }
+
+        private void DoSplashed()
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null)
+            {
+                return;
+            }
+
+            if (vessel.horizontalSrfSpeed > maxSurfaceSpeed && isDeployed)
+            {
+                FoldPanels(vessel, false);
+                return;
+            }
+
+            if (vessel.horizontalSrfSpeed <= maxSurfaceSpeed && !isDeployed)
+            {
+                FoldPanels(vessel, true);
+                return;
+            }
+        }
+
+        private void FoldPanels(Vessel vessel, bool deploy)
+        {
+            foreach (Part p in vessel.Parts)
+            {
+                foreach (PartModule m in p.Modules)
+                {
+                    var solar = m as ModuleDeployablePart;
+                    if (solar != null)
+                    {
+                        if (deploy && solar.deployState == ModuleDeployablePart.DeployState.RETRACTED)
+                        {
+                            solar.Extend();
+                            SendMessageToScreen("Deploying");
+                            isDeployed = true;
+                            break;
+                        }
+
+                        if (!deploy && solar.deployState == ModuleDeployablePart.DeployState.EXTENDED)
+                        {
+                            solar.Retract();
+                            SendMessageToScreen("Retracting");
+                            isDeployed = false;
+                            break;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     public class AutomaticLightPartModule : PartModule
     {
         private static string lastMessage;
 
-        private static bool isActive;
+        private static bool isActive = true;
 
         [KSPField()]
         public bool checkResource;
@@ -99,7 +264,7 @@
             }
 
             var vessel = FlightGlobals.ActiveVessel;
-            if (vessel.state != Vessel.State.ACTIVE)
+            if (!vessel.loaded) //  vessel.state != Vessel.State.ACTIVE)
             {
                 lastMessage = "Vessel not active!";
                 Debug();
@@ -117,7 +282,7 @@
             var rex = Utilities.GetResource("ElectricCharge");
 
             // Check that we have the required resource.
-            if (rex > 0 && rex > minResourceLevel)
+            if (rex > 0 && rex > minResourceLevel && TimeWarp.CurrentRate <= 2)
             {
                 TurnOnOffAuto();
             }

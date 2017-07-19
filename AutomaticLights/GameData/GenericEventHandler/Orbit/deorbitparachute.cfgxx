@@ -1,0 +1,7 @@
+﻿@PART[*]:HAS[@MODULE[ModuleParachute]]:FINAL
+{
+	MODULE
+	{
+		name = OrbitDecay
+	}
+}
